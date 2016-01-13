@@ -1,0 +1,4 @@
+class-central:
+  build: .
+  ports:
+   - "8000:80"
