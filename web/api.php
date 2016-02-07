@@ -9,13 +9,12 @@ $kernel = new AppKernel('prod', false);
 $kernel->loadClassCache();
 $kernel->boot();
 
-$courses = $kernel->getContainer()
-                  ->get('doctrine')
-                  ->getManager()
-                  ->getRepository('ClassCentralSiteBundle:Course')
-                  ->findAll();
+$em = $kernel->getContainer()->get('doctrine')->getManager();
 
-// Output a JSON dump of all courses
+$query = $em->createQuery('SELECT c FROM ClassCentral\SiteBundle\Entity\Course c');
+$courses = $query->getResult();
+
+// Output a JSON dump of all selected courses
 header('Content-Type: application/json');
 
 echo "[\n";
@@ -24,27 +23,33 @@ $first = true;
 
 foreach($courses as $c)
 {
+    $language = $c->getLanguage();
+    if($language)
+      $language_code = $language->getCode();
+
+    $initiative = $c->getInitiative();
+    if($initiative)
+      $initiative_name = $initiative->getName();
+
     $course_serializable = array(
       'name' => $c->getName(),
       'url' => $c->getUrl(),
       'slug' => $c->getSlug(),
       'short_name' => $c->getShortName(),
-      'oneliner' => $c->getOneliner(),
       'description' => $c->getDescription(),
       'long_description' => $c->getLongDescription(),
       'syllabus' => $c->getSyllabus(),
+      'initiative' => $initiative_name,
       'thumbnail' => $c->getThumbnail(),
-      'start_date' => $c->getStartDate(),
+      'start_date' => date('c', $c->getStartDate()),
       'exact_date_known' => $c->getExactDateKnown(),
-      'language' => $c->getLanguage(),
-      'created' => $c->getCreated(),
-      'modified' => $c->getModified(),
+      'language' => $language_code,
       'video_intro' => $c->getVideoIntro(),
       'length' => $c->getLength(),
       'certificate' => $c->getCertificate(),
       'verified_certificate' => $c->getVerifiedCertificate(),
       'workload_min' => $c->getWorkloadMin(),
-      'workload_max' => $c->getWorkloadMax(),
+      'workload_max' => $c->getWorkloadMax()
     );
 
     if($first)
