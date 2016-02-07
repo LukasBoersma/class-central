@@ -24,6 +24,13 @@ class DefaultController extends Controller {
         // Autologin if a token exists
         $this->get('user_service')->autoLogin($request);
 
+        // Check whether there is a redirect. This is done to redirect users to login only areas of the site.
+        $redirect = $request->get('redirect');
+        if( !empty($redirect) and in_array($redirect, array('user_follows','user_recommendations')) )
+        {
+            return $this->redirect($this->generateUrl( $redirect ));
+        }
+
         $cache = $this->get('Cache');
         $esCourses = $this->get('es_courses');
         $em = $this->getDoctrine()->getManager();
@@ -58,9 +65,17 @@ class DefaultController extends Controller {
             'action' => $this->generateUrl('signup_create_user',array('src' => 'create_free_account' ))
         ));
 
-        // Get a list of courses taken by the signed in user
+        // Get a list of courses taken by the signed in user as well as course recommendations
         $uc = array();
         $ucCount = 0;
+        $recommendedCourses =  array(
+            'allSubjects' => '',
+            'courses' => '',
+            'allLanguages' => '',
+            'sortField' => '',
+            'sortClass' => '',
+            'pageNo' => '',
+        );
         if( $this->get('security.context')->isGranted('IS_AUTHENTICATED_FULLY') )
         {
             $user = $this->get('security.context')->getToken()->getUser();
@@ -88,6 +103,18 @@ class DefaultController extends Controller {
             }
             $response = $esCourses->findByIds( $courseIds );
             $uc = $response['results'];
+
+            // Get recommendations details
+
+
+            if( $user->areRecommendationsAvailable() )
+            {
+                // Get the courses
+                $suggestions = $this->get('suggestions');
+                $recommendedCourses = $suggestions->getRecommendations($user,$request->query->all());
+                $recommendedCourses['courses']['hits']['hits'] = array_splice( $recommendedCourses['courses']['hits']['hits'],0,10);
+            }
+
         }
 
         return $this->render('ClassCentralSiteBundle:Default:index.html.twig', array(
@@ -99,7 +126,8 @@ class DefaultController extends Controller {
                 'subjects' => $subjects,
                 'signupForm' => $signupForm->createView(),
                 'uc' => $uc,
-                'ucCount' => $ucCount
+                'ucCount' => $ucCount,
+                'recommendedCourses' => $recommendedCourses,
                ));
     }
 

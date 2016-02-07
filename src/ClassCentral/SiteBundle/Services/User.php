@@ -3,6 +3,7 @@
 namespace ClassCentral\SiteBundle\Services;
 
 use ClassCentral\SiteBundle\Entity\Course;
+use ClassCentral\SiteBundle\Entity\Item;
 use ClassCentral\SiteBundle\Entity\MoocTrackerSearchTerm;
 use ClassCentral\SiteBundle\Entity\Profile;
 use ClassCentral\SiteBundle\Entity\UserCourse;
@@ -468,6 +469,7 @@ class User {
         $em->persist( $this->getPreference($user, UserPreference::USER_PREFERENCE_MOOC_TRACKER_SEARCH_TERM, $prefs));
         $em->persist( $this->getPreference($user, UserPreference::USER_PREFERENCE_REVIEW_SOLICITATION, $prefs));
         $em->persist( $this->getPreference($user, UserPreference::USER_PREFERENCE_FOLLOW_UP_EMAILs, $prefs));
+        $em->persist( $this->getPreference($user, UserPreference::USER_PREFERENCE_PERSONALIZED_COURSE_RECOMMENDATIONS, $prefs));
         $em->flush();
     }
 
@@ -832,6 +834,5 @@ class User {
 
         return $score;
     }
-
 
 } 

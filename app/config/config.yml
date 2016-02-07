@@ -12,7 +12,7 @@ framework:
     validation:      { enable_annotations: true }
     templating:
       engines: ['twig']
-      assets_version: 40
+      assets_version: 42
     default_locale: "%locale%"
     trusted_proxies: ~
     session:
@@ -131,6 +131,9 @@ services:
         arguments: ['@service_container']
   follow:
         class: ClassCentral\SiteBundle\Services\Follow
+        arguments: ['@service_container']
+  suggestions:
+        class: ClassCentral\SiteBundle\Services\Suggestions
         arguments: ['@service_container']
   # Used to retrive jobs
   es_scheduler:

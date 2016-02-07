@@ -18,6 +18,8 @@ CC.Class['Follow'] = (function(){
         var itemName = $(this).data('item-name');
         var showItemName = $(this).data('show-item-name');
         var following = $(this).data('following');
+        var hideLogo  = $(this).data('hide-logo');
+        var hideFollowing = $(this).data('hide-following');
 
         $.ajax({
             url: "/ajax/isLoggedIn",
@@ -43,13 +45,16 @@ CC.Class['Follow'] = (function(){
                                 // update the state to followed
                                 var itemClass = '.btn-follow-item-' + item + '-' + itemId;
                                 var btnText = '';
-                                if(showItemName) {
-                                    btnText = " <i>" + itemName + "</i>";
-                                }
+                                var itemText = "<span>" + itemName + "</span>";
 
                                 if(following) {
+                                    if(showItemName) {
+                                        btnText = itemText;
+                                    }
                                     // user has click the unfollow button
-                                    btnText = "Follow" + btnText;
+                                    if(!hideFollowing) {
+                                        btnText = "Follow " + btnText;
+                                    }
                                     $(itemClass).removeClass('active');
                                     $(self).data('following',false);
                                     utilities.notify(
@@ -57,18 +62,39 @@ CC.Class['Follow'] = (function(){
                                         "You will no longer receive course notifications and reminders about " + itemName,
                                         "success"
                                     );
+                                    // Decrement the user following count
+                                    decrementFollowCount( item );
                                 } else {
-                                    btnText = "Following" + btnText;
+
+                                    if(showItemName) {
+                                        btnText = "<i>" + itemText + "</i>";
+                                    }
+
+                                    if(!hideFollowing) {
+                                        btnText = "Following " + btnText;
+                                    }
                                     $(itemClass).addClass('active');
+
                                     $(self).data('following',true);
-                                    utilities.notify(
-                                        "Following " + itemName,
-                                        "You will receive regular course notifications and reminders about " + itemName,
-                                        "success"
-                                    );
+                                    if( result.message.followCount == 10 ) {
+
+                                        var recommendationsAlert=" <div class='alert alert-success alert-dismissible' role='alert' style='position: fixed; top: 100px; width: inherit;z-index: 1000000 '><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span aria-hidden='true'>&times;</span></button> <a href='/user/recommendations'>Congrats! You have unlocked <strong>personalized course recommendations</strong>. Click here to view all recommendations.</a> </div>";
+                                        $('.cc-body-content').append(
+                                            recommendationsAlert
+                                        );
+
+                                    } else {
+                                        utilities.notify(
+                                            "Following " + itemName,
+                                            "You will receive regular course notifications and reminders about " + itemName,
+                                            "success"
+                                        );
+                                    }
+
+                                    incrementFollowCount( item );
                                 }
 
-                                $(itemClass).find('.action-button__unit:eq(1)').html( btnText );
+                                $(itemClass).find('.btn-follow-item-box').html( btnText );
 
 
                             } else {
@@ -101,6 +127,24 @@ CC.Class['Follow'] = (function(){
                 }
             }
         });
+    }
+
+    function incrementFollowCount(item) {
+        var counter = item + "-user-follow-count";
+        if( $('.' + counter) ) {
+            $('.' + counter).text(  parseInt($('.' + counter).text()) + 1);
+        }
+    }
+
+    function decrementFollowCount(item) {
+        var counter = item + "-user-follow-count";
+        if( $('.' + counter) ) {
+            $('.' + counter).text(  parseInt($('.' + counter).text()) - 1);
+        }
+    }
+
+    function decrementCount(item) {
+
     }
 
     /**

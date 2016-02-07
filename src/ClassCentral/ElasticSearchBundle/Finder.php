@@ -8,6 +8,7 @@
 
 namespace ClassCentral\ElasticSearchBundle;
 use ClassCentral\SiteBundle\Entity\CourseStatus;
+use ClassCentral\SiteBundle\Entity\Item;
 use ClassCentral\SiteBundle\Entity\Offering;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -107,19 +108,38 @@ class Finder {
         return $this->cp->find( $query, $filters, $this->getFacets(), $sort, $page );
     }
 
-    public function byFollows($institutionIds,$subjectIds, $providerIds,$filters= array(), $sort = array(), $page = 1)
+    public function byFollows($follows,$filters= array(), $sort = array(), $page = 1,$must = array(),$mustNot =array())
     {
+        $institutionIds = $follows[Item::ITEM_TYPE_INSTITUTION];
+        $providerIds = $follows[Item::ITEM_TYPE_PROVIDER];
+        $subjectIds = $follows[Item::ITEM_TYPE_SUBJECT];
+
+        $startingSoonScoreMultiplier = 1;
+        if( isset ($must['terms']['subjects.id']) )
+        {
+            $startingSoonScoreMultiplier = 1000;
+        }
+
+        $mn =  array(
+            array(
+                "term" => array(
+                    'course.nextSession.status' => Offering::START_DATES_UNKNOWN,
+                )
+            )
+        );
+
+        
+
+        if( !empty($mustNot) )
+        {
+            $mn[] = $mustNot;
+        }
+
 
         $query = array(
              "function_score" => array(
                  'query' => array(
                     'bool' => array(
-                        'must' => array(
-                            array(
-                                'terms' => array(
-                                    'subjects.id' => $subjectIds
-                                ))
-                        ),
                         'should' => array(
                             array(
                                 'terms' => array(
@@ -136,11 +156,7 @@ class Finder {
 
                         ),
                         // Remove sessions where the start date is unknown
-                        'must_not' => array(
-                            "term" => array(
-                                'course.nextSession.status' => Offering::START_DATES_UNKNOWN
-                            )
-                        ),
+                        'must_not' => $mustNot
                     )
                  ),
                  "script_score" => array(
@@ -167,13 +183,13 @@ class Finder {
                         newScore = newCourse*300;
 
                         // Starting soon score
-                        startingSoonScore = startingSoon*500;
-                        return _score*(ratingScore + followedScore + startingSoonScore  +  1);
+                        startingSoonScore = startingSoon*{$startingSoonScoreMultiplier};
+                        return _score*(ratingScore + followedScore + startingSoonScore + newScore   +  1);
                     "
                  )
         ));
 
-        return $this->cp->find( $query, $filters, $this->getFacets(), $sort, $page );
+        return $this->cp->find( $query, $filters, $this->getFacets(), $sort, $page,$must );
     }
 
     public function search( $keyword, $filters= array(), $sort = array(), $page = 1 )
@@ -198,7 +214,7 @@ class Finder {
                             'provider.name',
                             "subjects.name^2",
                             "subject.slug",
-                            "searchDesc"
+                            "tags"
                         ),
                         "tie_breaker" => 0.1,
                         "minimum_should_match" => "2<75%"
@@ -211,7 +227,7 @@ class Finder {
                         startingSoon = doc['startingSoon'].value;
                         newCourse = doc['new'].value ;
 
-                        return _score*( rating* 25 + followed/15 + 1);
+                        return _score*( rating* 25 + followed/15 + startingSoon*150 + 1);
                     "
                 )
             )

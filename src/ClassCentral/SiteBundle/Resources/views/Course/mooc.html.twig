@@ -251,8 +251,7 @@
 
                     <div class="tiny-review-block__star-rating">
                         <div class="average-rating course-rating-course-page" data-score="{{ rating }}">
-                            <meta itemprop="average" content="{{ rating }}">
-                            <meta itemprop="best" content = "5"/>
+                            <meta itemprop="rating" content="{{ rating }}" />
                         </div>
                     </div>
                 </div>
@@ -910,6 +909,9 @@
     });
     });
 
+    {% if  showAddToMTModal %}
+        $('#signupModal-mooc_tracker_add_to_my_courses').modal('show');
+    {% endif %}
     // Counter for the numbers
     setTimeout( function() {
     var numAnim = new countUp("mycourses-listed-count", 0, {{ course.listed }}, 0, 3, { separator: '' } );

@@ -8,8 +8,8 @@
 
 namespace ClassCentral\SiteBundle\Services;
 use ClassCentral\SiteBundle\Entity\Initiative;
-use ClassCentral\SiteBundle\Entity\Review;
-use ClassCentral\SiteBundle\Entity\User;
+use ClassCentral\SiteBundle\Entity\Review as ReviewEntity;
+use ClassCentral\SiteBundle\Entity\User as UserEntity;
 use ClassCentral\SiteBundle\Entity\UserCourse;
 use ClassCentral\SiteBundle\Utility\Breadcrumb;
 use ClassCentral\SiteBundle\Utility\PageHeader\PageHeaderFactory;
@@ -168,14 +168,13 @@ class CourseListing {
         return $data;
     }
 
-    public function byFollows($instituionIds,$subjectIds, $providerIds,Request $request)
+    public function byFollows($follows, $params, $must, $mustNot = array())
     {
         $finder = $this->container->get('course_finder');
-        $params = $request->query->all();
         $params['session'] = "upcoming,selfpaced";
         extract($this->getInfoFromParams( $params ));
 
-        $courses = $finder->byFollows($instituionIds,$subjectIds,$providerIds, $filters, array(), $pageNo);
+        $courses = $finder->byFollows($follows, $filters, array(), $pageNo,$must, $mustNot);
         extract($this->getFacets($courses));
 
         return compact(
@@ -314,7 +313,7 @@ class CourseListing {
         );
     }
 
-    public function userLibrary(User $user, Request $request)
+    public function userLibrary(UserEntity $user, Request $request)
     {
         $finder = $this->container->get('course_finder');
 
@@ -405,7 +404,7 @@ class CourseListing {
         $date->sub( new \DateInterval('P14D') );
         $rsm = new ResultSetMapping();
         $rsm->addScalarResult('course_id','course_id');
-        $reviewStatusNotShownLowerBound = Review::REVIEW_NOT_SHOWN_STATUS_LOWER_BOUND;
+        $reviewStatusNotShownLowerBound = ReviewEntity::REVIEW_NOT_SHOWN_STATUS_LOWER_BOUND;
         $q = $this->container->get('doctrine')->getManager()->createNativeQuery("
             SELECT course_id FROM reviews WHERE created > '{$date->format('Y-m-d')}' AND status < {$reviewStatusNotShownLowerBound}  GROUP BY course_id ORDER BY count(*) DESC LIMIT 10;
         ", $rsm);

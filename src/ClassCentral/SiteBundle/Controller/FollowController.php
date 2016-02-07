@@ -31,8 +31,10 @@ class FollowController extends Controller
             if($f)
             {
                 // Update User Session
-                $userSession->saveFollowInformation();
-                return UniversalHelper::getAjaxResponse(true);
+                $userSession->saveFollowInformation($user);
+                return UniversalHelper::getAjaxResponse(true,array(
+                    'followCount' => count( $user->getFollows() )
+                ));
             }
             else
             {
@@ -59,7 +61,7 @@ class FollowController extends Controller
             if($f)
             {
                 // Update User Session
-                $userSession->saveFollowInformation();
+                $userSession->saveFollowInformation($user);
                 return UniversalHelper::getAjaxResponse(true);
             }
             else
@@ -85,6 +87,7 @@ class FollowController extends Controller
     public function personalizationAction(Request $request)
     {
         $cache = $this->get('cache');
+        $userSession = $this->get('user_session');
 
         $providerController = new InitiativeController();
         $providersData = $providerController->getProvidersList($this->container);
@@ -107,6 +110,14 @@ class FollowController extends Controller
             }
         }
 
+        // Count follows.
+        $follows = $userSession->getFollows();
+        $numSubjectsFollowed = count( $follows[Item::ITEM_TYPE_SUBJECT]);
+        $numInstitutionsFollowed = count( $follows[Item::ITEM_TYPE_INSTITUTION] );
+        $numProvidersFollowed = count( $follows[Item::ITEM_TYPE_PROVIDER]);
+        $numFollows = count($this->getUser()->getFollows());
+        $isFollowingASubject = $this->getUser()->isFollowingASubject();
+
         return  $this->render('ClassCentralSiteBundle:Follow:personalization.html.twig',array(
             'providers' => $providersData['providers'],
             'followProviderItem' => Item::ITEM_TYPE_PROVIDER,
@@ -115,26 +126,78 @@ class FollowController extends Controller
             'page' => 'Personalization',
             'subjects' => $subjects,
             'childSubjects' => $childSubjects,
-            'followSubjectItem' => Item::ITEM_TYPE_SUBJECT
+            'followSubjectItem' => Item::ITEM_TYPE_SUBJECT,
+            'numSubjectsFollowed' => $numSubjectsFollowed,
+            'numInstitutionFollowed' => $numInstitutionsFollowed,
+            'numProvidersFollowed' => $numProvidersFollowed,
+            'numFollows' => $numFollows,
+            'isFollowingASubject' => $isFollowingASubject
         ));
     }
 
     /**
      * Show courses based on user recommendations
      */
-    public function coursesAction(Request $request)
+    public function recommendationsAction(Request $request)
     {
         // Autologin if a token exists
         $this->get('user_service')->autoLogin($request);
 
-        $cl = $this->get('course_listing');
-        $userSession = $this->get('user_session');
-        $follows = $userSession->getFollows();
-        $institutionIds = array_keys($follows[Item::ITEM_TYPE_INSTITUTION]);
-        $providerIds = array_keys($follows[Item::ITEM_TYPE_PROVIDER]);
-        $subjectIds = array_keys($follows[Item::ITEM_TYPE_SUBJECT]);
+        $user = $this->getUser();
 
-        $data = $cl->byFollows($institutionIds,$subjectIds, $providerIds,$request);
+        // Check how many follows this user has.
+        $numFollows = count($user->getFollows());
+        $isFollowingASubject = $user->isFollowingASubject();
+
+        if($numFollows >= 10 and $isFollowingASubject)
+        {
+            // Get the courses
+            $suggestions = $this->get('suggestions');
+            $data = $suggestions->getRecommendations($user,$request->query->all());
+        }
+        else
+        {
+            $data = array(
+                'allSubjects' => '',
+                'courses' => '',
+                'allLanguages' => '',
+                'sortField' => '',
+                'sortClass' => '',
+                'pageNo' => '',
+            );
+        }
+
+
+        return $this->render('ClassCentralSiteBundle:Follow:courses.html.twig',
+            array(
+                'page'=>'user_course_recommendations',
+                'results' => $data['courses'],
+                'listTypes' => UserCourse::$lists,
+                'allSubjects' => $data['allSubjects'],
+                'allLanguages' => $data['allLanguages'],
+                'offeringTypes' => Offering::$types,
+                'sortField' => $data['sortField'],
+                'sortClass' => $data['sortClass'],
+                'pageNo' => $data['pageNo'],
+                'showHeader' => true,
+                'numFollows' => $numFollows,
+                'isFollowingASubject' => $isFollowingASubject
+            ));
+    }
+
+    /**
+     * Generates a suggestions page by user id. Only open to admins
+     * @param Request $request
+     * @param $userId
+     * @return \Symfony\Component\HttpFoundation\Response
+     */
+    public function recommendationsByUserAction(Request $request, $userId)
+    {
+        $user = $this->getDoctrine()->getManager()->getRepository('ClassCentralSiteBundle:User')->find($userId);
+        $suggestions = $this->get('suggestions');
+        $data = $suggestions->getRecommendations($user,$request->query->all());
+        // $data = $suggestions->newCoursesbyUser($user,30);
+         //$data = $suggestions->byStartDate($user, '2016-02-01','2016-02-26');
 
         return $this->render('ClassCentralSiteBundle:Follow:courses.html.twig',
             array(
@@ -149,5 +212,21 @@ class FollowController extends Controller
                 'pageNo' => $data['pageNo'],
                 'showHeader' => true
             ));
+    }
+
+    /**
+     *
+     * @param Request $request
+     * @param $userId
+     * @return \Symfony\Component\HttpFoundation\Response
+     */
+    public function personalizationByUserAction(Request $request, $userId)
+    {
+        $user = $this->getDoctrine()->getManager()->getRepository('ClassCentralSiteBundle:User')->find($userId);
+        $userSession = $this->get('user_session');
+        $userSession->saveFollowInformation($user);
+
+        return $this->personalizationAction($request);
+
     }
 }

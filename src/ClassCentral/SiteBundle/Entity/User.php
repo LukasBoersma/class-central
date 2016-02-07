@@ -927,4 +927,58 @@ class User implements UserInterface, \Serializable
         $this->follows[] = $follow;
     }
 
+    /**
+     * Categorize item ids by item type
+     * @return array
+     */
+    public function getFollowsCategorizedByItem()
+    {
+        $follows = array();
+        foreach(Item::$items as $item)
+        {
+            $follows[$item] = array();
+        }
+
+        foreach($this->getFollows() as $follow)
+        {
+            $follows[$follow->getItem()][] = $follow->getItemId();
+        }
+
+        return $follows;
+    }
+
+    /**
+     * For the recommendations page to work user needs to follow
+     * atleast 1 subject. This function checks for that.
+     */
+    public function isFollowingASubject()
+    {
+        foreach($this->getFollows() as $follow)
+        {
+            if( $follow->getItem() == Item::ITEM_TYPE_SUBJECT )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Get User Course Ids
+     */
+    public function getUserCourseIds()
+    {
+        $courseIds = array();
+        foreach($this->getUserCourses() as $uc)
+        {
+            $courseIds[] =$uc->getCourse()->getId();
+        }
+        return $courseIds;
+    }
+
+    public function areRecommendationsAvailable()
+    {
+        return (count($this->getFollows()) >= 10 ) && $this->isFollowingASubject();
+    }
 }
