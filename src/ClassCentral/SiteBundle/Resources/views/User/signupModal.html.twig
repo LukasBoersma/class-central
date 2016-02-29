@@ -95,8 +95,13 @@
         <span>OR</span>
     </div>
 
-    {{ form_start(signupForm) }}
 
+    {{ form_start(signupForm, { attr: { name :'cc-signup-form'}} ) }}
+
+        <div class="hidden signup-modal-src">{{ src}}</div>
+
+        <h4 class="cc-signup-form-error-message"></h4>
+    
         <div class="basic-field-group">
            {{ form_row(signupForm.email,{ attr: {class: 'basic-input', placeholder: 'Your email'}, label:false }) }}
         </div>
@@ -110,9 +115,10 @@
         </div>
 
         <div class="basic-field-group">
-            {{ form_row(signupForm.save, { attr: {class: 'basic-input-button'} }) }}
+            {{ form_row(signupForm.save, { attr: {class: 'basic-input-button btn-cc-user-signup'} }) }}
         </div>
 
+        <input type="hidden" name="signupFormModal" value="true">
 
     {{ form_end(signupForm) }}
     <div class="basic-field-note">

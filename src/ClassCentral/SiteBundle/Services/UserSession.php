@@ -47,7 +47,7 @@ class UserSession
      * @var array
      */
     private static $skipRoutes = array(
-        'signup', 'signup_mooc', 'signup_search_term', 'signup_create_user',
+        'signup', 'signup_mooc', 'pre_signup_search_term', 'signup_create_user',
         'forgotpassword', 'forgotpassword_sendemail', 'resetPassword', 'resetPassword_save',
         'fb_authorize_start', 'fb_authorize_redirect',
         'review_save', 'review_create',
@@ -118,6 +118,7 @@ class UserSession
             return;
         }
         unset($routeParams['_route']);
+        $routeParams = array_merge($routeParams, $request->query->all() );
         $routeData = array('name' => $routeName, 'params' => $routeParams);
 
         //Skipping duplicates
@@ -318,11 +319,15 @@ class UserSession
         $credentialIds = array();
         $reviewIds = array();
 
-        foreach($user->getCredentialReviews() as $cr)
+        if( !empty($user->getCredentialReviews()) )
         {
-            $reviewIds[] = $cr->getId();
-            $credentialIds[] = $cr->getCredential()->getId();
+            foreach($user->getCredentialReviews() as $cr)
+            {
+                $reviewIds[] = $cr->getId();
+                $credentialIds[] = $cr->getCredential()->getId();
+            }
         }
+
 
         $this->session->set(self::USER_CREDENTIAL_REVIEWS, $reviewIds);
         $this->session->set(self::USER_REVIEWED_CREDENTIALS, $credentialIds);

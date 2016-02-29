@@ -514,12 +514,8 @@ jQuery(function($) {
                 function(result){
                     result = JSON.parse(result);
                     if(result['success']) {
-                        // Clear the form
-                        var rating = $('#rating').raty('score');
-                        $('textarea[name=review-text]').val("");
-                        $('input:radio[name=progress]:checked').prop('checked',false);
-
-                        $('#signupModal-create_course_review').modal('show');
+                        // Redirect back to the course page and ask the user if they want to signup for the course
+                        window.location.href = $('#courseUrl').data("value");
                     } else {
                         // Show an error message
                         showPinesNotification('error','Some error occurred',result['message']);
@@ -584,7 +580,8 @@ jQuery(function($) {
             $('#progress-error').hide();
         }
 
-        // Review if exits should be atleast 20 words long
+        // Review if exists should be atleast 20 words long
+        // Make review text mandatory
         if(!isEmpty(review.reviewText)) {
             // Non empty review. Should be 20 words long
             var words = review.reviewText.split(' ');
@@ -595,7 +592,8 @@ jQuery(function($) {
                 $('#review-text-error').hide();
             }
         } else {
-            $('#review-text-error').hide();
+            $('#review-text-error').show();
+            validationError = true;
         }
 
         return validationError;
@@ -1143,12 +1141,11 @@ jQuery(function($) {
 
     var signupForms = ['mooc_tracker_add_to_my_courses','btn_get_notified','go_to_class','credential_create_free_account','mooc_tracker_search_terms',
         'home_create_free_account','convincer_create_free_account','create_course_review','create_credential_review','btn_follow'];
-    for(i =0 ; i < signupForms.length; i++)
+    for(var i =0 ; i < signupForms.length; i++)
     {
         var signupFormId = "#signupModal-" + signupForms[i];
         // mini slider functionality
         $( signupFormId + " .js-mini-slider" ).each(function( index, element ) {
-            console.log(element);
             $(element).flexslider({
                 selector: " .js-mini-slider-slides .js-mini-slider-slide",
                 slideshow: true,
@@ -1256,5 +1253,9 @@ jQuery(function($) {
         });
     }
 
+
+
+
+    $('[data-toggle="tooltip"]').tooltip();
 
 });

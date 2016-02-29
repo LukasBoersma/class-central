@@ -1073,18 +1073,10 @@
                                         <table class="twelve columns">
                                             <tr>
                                                 <td>
-                                                    <table class="button secondary">
-                                                        <tr>
-                                                            <td>
-                                                                <span>Earlier today we sent you February's recommendation email. Sorry about that. Here is the correct one.</span>
-                                                            </td>
-                                                        </tr>
-                                                    </table>
-                                                    <br/>
-                                                    <h5>{{ user.displayName }}, we have some personalized course recommendations for you.</h5>
+                                                    <h5>{{ user.displayName }}, you have new courses waiting for you.</h5>
                                                     <br/>
                                                     <p>
-                                                        Below are some courses starting in {{ recommendationsMonth }} that you might be interested in. Don't forget to checkout Class Central's <a href="https://www.class-central.com/report/ten-most-popular-moocs-march-2016/">ten most popular courses</a> starting in March.
+                                                         Based on your <a href="{{ baseUrl }}{{ path('ClassCentralSiteBundle_homepage',{ redirect : 'user_follows',autoLogin:loginToken,utm_medium : utm.medium,utm_source: utm.source, utm_campaign: utm.campaign}) }}">follows</a>, {{ courses.hits.hits|length }} brand new courses have been added to Class Central in the <strong>last 30 days</strong>.
                                                     </p>
                                                 </td>
 
@@ -1102,27 +1094,26 @@
                                             <tr>
                                                 <td class="panel" style="padding: 20px;">
 
-                                                        <div>
-                                                            {% set courseCount = 10 %}
-                                                            {% for result in courses.hits.hits if result._source.nextSession is not empty and courseCount %}
-                                                                {% set course = result._source %}
-                                                                <p>
-                                                                    <a href="{{ baseUrl }}{{ path('ClassCentralSiteBundle_mooc',{'id': course.id, 'slug':course.slug, autoLogin:loginToken,utm_medium : utm.medium,utm_source: utm.source, utm_campaign: utm.campaign}) }}" style="color: #043bff;font-size: 16px; font-weight: 700" > {{ course.name }} </a> • Starts {{ course.nextSession.displayDate }} <br />
-                                                                    <a href="{{ baseUrl }}{{ path('ClassCentralSiteBundle_mooc',{'id': course.id, 'slug':course.slug, autoLogin:loginToken,utm_medium : utm.medium,utm_source: utm.source, utm_campaign: utm.campaign}) }}#reviews" class="cc-write-a-review"><span style="color:#24313a">{{ course.ratingStars }}</span> ({{ course.reviewsCount }})</a> <br/>
-                                                                    {% if course.institutions|length %}
-                                                                        {% set institution = course.institutions[0] %}
-                                                                        <span style="color: #999999;font-size: 12px; font-weight: 400">{{ institution.name }}</span>
-                                                                    {% endif %}
-                                                                    {% if course.provider %}
-                                                                        <span style="color: #8e9496;font-size: 12px; font-weight: 400">via</span>
-                                                                        <span style="font-weight: 700;font-size: 11px">{{ course.provider.name }}</span>
-                                                                    {% endif %}
-                                                                </p>
-                                                                <br/>
-                                                                {% set courseCount = courseCount - 1 %}
+                                                    <div>
 
-                                                            {% endfor %}
-                                                        </div>
+                                                        {% for result in courses.hits.hits if result._source.nextSession is not empty %}
+                                                        {% set course = result._source %}
+                                                        <p>
+                                                            <a href="{{ baseUrl }}{{ path('ClassCentralSiteBundle_mooc',{'id': course.id, 'slug':course.slug, autoLogin:loginToken,utm_medium : utm.medium,utm_source: utm.source, utm_campaign: utm.campaign}) }}" style="color: #043bff;font-size: 16px; font-weight: 700" > {{ course.name }} </a> • Starts {{ course.nextSession.displayDate }} <br />
+                                                            <a href="{{ baseUrl }}{{ path('ClassCentralSiteBundle_mooc',{'id': course.id, 'slug':course.slug, autoLogin:loginToken,utm_medium : utm.medium,utm_source: utm.source, utm_campaign: utm.campaign}) }}#reviews" class="cc-write-a-review"><span style="color:#24313a">{{ course.ratingStars }}</span> ({{ course.reviewsCount }})</a> <br/>
+                                                            {% if course.institutions|length %}
+                                                            {% set institution = course.institutions[0] %}
+                                                            <span style="color: #999999;font-size: 12px; font-weight: 400">{{ institution.name }}</span>
+                                                            {% endif %}
+                                                            {% if course.provider %}
+                                                            <span style="color: #8e9496;font-size: 12px; font-weight: 400">via</span>
+                                                            <span style="font-weight: 700;font-size: 11px">{{ course.provider.name }}</span>
+                                                            {% endif %}
+                                                        </p>
+                                                        <br/>
+
+                                                        {% endfor %}
+                                                    </div>
 
 
 
@@ -1142,35 +1133,35 @@
                                         <table class="twelve columns">
                                             <tr>
                                                 {% if  recommendationsPageUnlocked %}
-                                                    <td>
+                                                <td>
 
-                                                        The recommendations are based on <a href="{{ baseUrl }}{{ path('ClassCentralSiteBundle_homepage',{ redirect : 'user_follows',autoLogin:loginToken,utm_medium : utm.medium,utm_source: utm.source, utm_campaign: utm.campaign}) }}">your follows</a>. To see all your recommendations, visit your <a href="{{ baseUrl }}{{ path('ClassCentralSiteBundle_homepage',{autoLogin:loginToken,utm_medium : utm.medium,utm_source: utm.source, utm_campaign: utm.campaign}) }}">personalized recommendations page</a>.
-                                                        <br/> <br/>
-                                                        <table class="button success">
-                                                            <tr>
-                                                                <td>
-                                                                    <a href="{{ baseUrl }}{{ path('ClassCentralSiteBundle_homepage',{ redirect : 'user_recommendations', autoLogin:loginToken,utm_medium : utm.medium,utm_source: utm.source, utm_campaign: utm.campaign}) }}">View all Recommendations</a>
-                                                                </td>
-                                                            </tr>
-                                                        </table>
+                                                    These updates are based on <a href="{{ baseUrl }}{{ path('ClassCentralSiteBundle_homepage',{ redirect : 'user_follows',autoLogin:loginToken,utm_medium : utm.medium,utm_source: utm.source, utm_campaign: utm.campaign}) }}">your follows</a>. Don't forget to checkout your <a href="{{ baseUrl }}{{ path('ClassCentralSiteBundle_homepage',{autoLogin:loginToken,utm_medium : utm.medium,utm_source: utm.source, utm_campaign: utm.campaign}) }}">personalized recommendations page</a>.
+                                                    <br/> <br/>
+                                                    <table class="button success">
+                                                        <tr>
+                                                            <td>
+                                                                <a href="{{ baseUrl }}{{ path('ClassCentralSiteBundle_homepage',{ redirect : 'user_recommendations', autoLogin:loginToken,utm_medium : utm.medium,utm_source: utm.source, utm_campaign: utm.campaign}) }}">View Personalized Recommendations</a>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
 
-                                                    </td>
+                                                </td>
                                                 {% else %}
-                                                    <td>
+                                                <td>
 
-                                                        Unlock your <a href="{{ baseUrl }}{{ path('ClassCentralSiteBundle_homepage',{ redirect : 'user_recommendations', autoLogin:loginToken,utm_medium : utm.medium,utm_source: utm.source, utm_campaign: utm.campaign}) }}">personalized recommendations page</a> by <a href="{{ baseUrl }}{{ path('ClassCentralSiteBundle_homepage',{ redirect : 'user_follows', autoLogin:loginToken,utm_medium : utm.medium,utm_source: utm.source, utm_campaign: utm.campaign}) }}">updating your follows</a>.
+                                                    Unlock your <a href="{{ baseUrl }}{{ path('ClassCentralSiteBundle_homepage',{ redirect : 'user_recommendations', autoLogin:loginToken,utm_medium : utm.medium,utm_source: utm.source, utm_campaign: utm.campaign}) }}">personalized recommendations page</a> by <a href="{{ baseUrl }}{{ path('ClassCentralSiteBundle_homepage',{ redirect : 'user_follows', autoLogin:loginToken,utm_medium : utm.medium,utm_source: utm.source, utm_campaign: utm.campaign}) }}">updating your follows</a>.
 
-                                                        <br/> <br/>
+                                                    <br/> <br/>
 
-                                                        <table class="button success">
-                                                            <tr>
-                                                                <td>
-                                                                    <a href="{{ baseUrl }}{{ path('ClassCentralSiteBundle_homepage',{redirect : 'user_follows',autoLogin:loginToken,utm_medium : utm.medium,utm_source: utm.source, utm_campaign: utm.campaign}) }}">Unlock Your Personalized Recommendations Page</a>
-                                                                </td>
-                                                            </tr>
-                                                        </table>
+                                                    <table class="button success">
+                                                        <tr>
+                                                            <td>
+                                                                <a href="{{ baseUrl }}{{ path('ClassCentralSiteBundle_homepage',{redirect : 'user_follows',autoLogin:loginToken,utm_medium : utm.medium,utm_source: utm.source, utm_campaign: utm.campaign}) }}">Unlock Your Personalized Recommendations Page</a>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
 
-                                                    </td>
+                                                </td>
 
                                                 {% endif %}
 

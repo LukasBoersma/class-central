@@ -2,8 +2,8 @@
 /**
  * Created by PhpStorm.
  * User: dhawal
- * Date: 1/27/16
- * Time: 2:03 PM
+ * Date: 2/14/16
+ * Time: 3:41 PM
  */
 
 namespace ClassCentral\MOOCTrackerBundle\Job;
@@ -11,25 +11,25 @@ namespace ClassCentral\MOOCTrackerBundle\Job;
 
 use ClassCentral\ElasticSearchBundle\Scheduler\SchedulerJobAbstract;
 use ClassCentral\ElasticSearchBundle\Scheduler\SchedulerJobStatus;
-use ClassCentral\SiteBundle\Entity\User as UserEntity;
 use ClassCentral\SiteBundle\Entity\UserPreference;
 use ClassCentral\SiteBundle\Services\Mailgun;
+use ClassCentral\SiteBundle\Entity\User as UserEntity;
 use ClassCentral\SiteBundle\Utility\CryptUtility;
 
-/**
- * Sends courses recommendations with follows
- * Class RecommendationEmailJob
- * @package ClassCentral\MOOCTrackerBundle\Job
- */
-class RecommendationEmailJob extends SchedulerJobAbstract
+class NewCoursesEmailJob extends SchedulerJobAbstract
 {
-    const RECOMMENDATION_EMAIL_JOB_TYPE = 'mt_recommendation_email_job_type';
+    const NEW_COURSES_EMAIL_JOB_TYPE = 'mt_new_courses_email_job_type';
 
     public function setUp()
     {
         // TODO: Implement setUp() method.
     }
 
+    /**
+     * Must return an object of type SchedulerJobStatus
+     * @param $args
+     * @return SchedulerJobStatus
+     */
     public function perform($args)
     {
         $em = $this->getContainer()->get('doctrine')->getManager();
@@ -41,53 +41,41 @@ class RecommendationEmailJob extends SchedulerJobAbstract
         {
             return SchedulerJobStatus::getStatusObject(
                 SchedulerJobStatus::SCHEDULERJOB_STATUS_FAILED,
-                "User with id $userId not found for job " . self::RECOMMENDATION_EMAIL_JOB_TYPE
+                "User with id $userId not found for job " . self::NEW_COURSES_EMAIL_JOB_TYPE
             );
         }
 
-        $m = $args['month'];
-        $y = $args['year'];
-        $startDate = new \DateTime("$y-$m-1");
-        $lastDayOfTheMonth = $startDate->format('t');
-        $endDate = new \DateTime("$y-$m-$lastDayOfTheMonth");
-        $data = $suggestionsService->byStartDate($user,$startDate,$endDate);
+        $data = $suggestionsService->newCoursesbyUser($user,31);
 
         if( count($data['courses']['hits']['hits']) == 0 )
         {
             // No courses found. Don't send email
             return SchedulerJobStatus::getStatusObject(
                 SchedulerJobStatus::SCHEDULERJOB_STATUS_SUCCESS,
-                "User with id $userId has no course recommendations for job" . self::RECOMMENDATION_EMAIL_JOB_TYPE
+                "User with id $userId has no course recommendations for job" . self::NEW_COURSES_EMAIL_JOB_TYPE
             );
 
         }
 
-        $emailContent = $this->getHTML($user,$data['courses'],$args['campaignId'], $startDate);
+        $emailContent = $this->getHTML($user,$data['courses'],$args['campaignId']);
 
         return $this->sendEmail(
             $emailContent,
             $user,
+            count($data['courses']['hits']['hits']),
             $args['campaignId'],
-            $args['deliveryTime'],
-            $startDate
+            $args['deliveryTime']
         );
-
     }
 
-    public function tearDown()
-    {
-        // TODO: Implement tearDown() method.
-    }
-
-    public function getHTML(UserEntity $user, $courses,$campaignId, $startDate)
+    public function getHTML(UserEntity $user, $courses,$campaignId)
     {
         $templating = $this->getContainer()->get('templating');
         $html = $templating->renderResponse(
-            'ClassCentralMOOCTrackerBundle:Recommendation:recommendation.inlined.html',array(
+            'ClassCentralMOOCTrackerBundle:NewCourses:newcourses.inlined.html',array(
                 'user'   => $user,
                 'courses' => $courses,
                 'recommendationsPageUnlocked' => ( count($user->getFollows()) >= 10),
-                'recommendationsMonth' => $startDate->format('F'),
                 'loginToken' => $this->getContainer()->get('user_service')->getLoginToken($user),
                 'baseUrl' => $this->getContainer()->getParameter('baseurl'),
                 'jobType' => $this->getJob()->getJobType(),
@@ -105,7 +93,7 @@ class RecommendationEmailJob extends SchedulerJobAbstract
 
         return $html;
     }
-    private function sendEmail( $html, UserEntity $user, $campaignId, $deliveryTime, $startDate)
+    private function sendEmail( $html, UserEntity $user, $numCourses, $campaignId, $deliveryTime)
     {
         $mailgun = $this->getContainer()->get('mailgun');
 
@@ -120,7 +108,7 @@ class RecommendationEmailJob extends SchedulerJobAbstract
             $response = $mailgun->sendMessage( array(
                 'from' => '"Class Central" <no-reply@class-central.com>',
                 'to' => $email,
-                'subject' => 'Course Recommendations for You • ' . $startDate->format('F Y') . ' (corrected)',
+                'subject' => $numCourses . ' brand new courses for you to join',
                 'html' => $html,
                 'o:campaign' => $campaignId,
                 'o:deliverytime' => $deliveryTime
@@ -141,12 +129,17 @@ class RecommendationEmailJob extends SchedulerJobAbstract
             // Failed
             return SchedulerJobStatus::getStatusObject(
                 SchedulerJobStatus::SCHEDULERJOB_STATUS_FAILED,
-                'Mailgun Exception'
+                'Mailgun Exception - ' . $e->getMessage()
             );
         }
 
         return SchedulerJobStatus::getStatusObject(SchedulerJobStatus::SCHEDULERJOB_STATUS_SUCCESS,
-            "Email sent for job " . self::RECOMMENDATION_EMAIL_JOB_TYPE . " with user ". $user->getId()
+            "Email sent for job " . self::NEW_COURSES_EMAIL_JOB_TYPE . " with user ". $user->getId()
         );
+    }
+
+    public function tearDown()
+    {
+        // TODO: Implement tearDown() method.
     }
 }
