@@ -5,18 +5,32 @@ use Symfony\Component\HttpFoundation\Request;
 
 $loader = require_once __DIR__.'/../app/bootstrap.php.cache';
 require_once __DIR__.'/../app/AppKernel.php';
-$kernel = new AppKernel('prod', false);
+$kernel = new AppKernel('dev', true);
 $kernel->loadClassCache();
 $kernel->boot();
 
 $em = $kernel->getContainer()->get('doctrine')->getManager();
 
-$query = $em->createQuery('SELECT c FROM ClassCentral\SiteBundle\Entity\Course c');
+$qb = $em->createQueryBuilder();
+$qb->select('c')->from('ClassCentral\SiteBundle\Entity\Course', 'c');
+
+if(isset($_GET['modified_after']))
+{
+  // Make sure modified_after only contains an integer and nothing else, just to be sure
+  $modified_timestamp = intval($_GET['modified_after']);
+  $modified_date = date('Y-m-d H:i:s', $modified_timestamp);
+
+  $qb->where("c.modified > '$modified_date'");
+}
+
+$query = $qb->getQuery();
 $courses = $query->getResult();
 
 // Output a JSON dump of all selected courses
 header('Content-Type: application/json');
 
+// Apparently PHP does not like encoding large arrays so we are building the
+// array by hand and concatenate the serialized courses
 echo "[\n";
 
 $first = true;
@@ -49,7 +63,9 @@ foreach($courses as $c)
       'certificate' => $c->getCertificate(),
       'verified_certificate' => $c->getVerifiedCertificate(),
       'workload_min' => $c->getWorkloadMin(),
-      'workload_max' => $c->getWorkloadMax()
+      'workload_max' => $c->getWorkloadMax(),
+      'created' => $c->getCreated(),
+      'modified' => $c->getModified()
     );
 
     if($first)

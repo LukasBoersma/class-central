@@ -12,6 +12,7 @@ use ClassCentral\SiteBundle\Entity\Offering;
 use ClassCentral\SiteBundle\Services\Kuber;
 use ClassCentral\SiteBundle\Utility\PageHeader\PageHeaderFactory;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use \DateTime;
 
 class Scraper extends ScraperAbstractInterface {
 
@@ -157,6 +158,8 @@ class Scraper extends ScraperAbstractInterface {
                         // NEW COURSE
                         if ($this->doModify())
                         {
+                            $c->setModified(new DateTime('NOW'));
+                            $c->setCreated(new DateTime('NOW'));
                             $em->persist($c);
                             $em->flush();
 
@@ -182,6 +185,7 @@ class Scraper extends ScraperAbstractInterface {
                         $this->outputChangedFields( $changedFields );
                         if ($this->doModify())
                         {
+                            $dbCourse->setModified(new DateTime('NOW'));
                             $em->persist($dbCourse);
                             $em->flush();
 
@@ -224,7 +228,7 @@ class Scraper extends ScraperAbstractInterface {
                                     $this->out("OnDemand Course Updated Start Date : " . $element['name']) ;
 
                                 }
-                                
+
                             }
                             else if ( $now >= $dbCourse->getNextOffering()->getStartDate() )
                             {
@@ -499,7 +503,7 @@ class Scraper extends ScraperAbstractInterface {
             }
             else
             {
-                
+
                 // Check if any fields are modified
                 $courseModified = false;
                 $changedFields = array(); // To keep track of fields that have changed

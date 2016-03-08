@@ -9,6 +9,7 @@ use ClassCentral\SiteBundle\Entity\Initiative;
 use ClassCentral\SiteBundle\Entity\Offering;
 use ClassCentral\SiteBundle\Services\Kuber;
 use ClassCentral\SiteBundle\Utility\UniversalHelper;
+use \DateTime;
 
 class Scraper extends ScraperAbstractInterface
 {
@@ -154,6 +155,8 @@ class Scraper extends ScraperAbstractInterface
                     // NEW COURSE
                     if ($this->doModify())
                     {
+                        $course->setModified(new DateTime('NOW'));
+                        $course->setCreated(new DateTime('NOW'));
                         // Add instructors
                         if(!empty($edxCourse['course-instructors']['course-staff']['staff-name']))
                         {
@@ -220,6 +223,7 @@ class Scraper extends ScraperAbstractInterface
                     $this->outputChangedFields($changedFields);
                     if ($this->doModify())
                     {
+                        $dbCourse->setModified(new DateTime('NOW'));
                         $em->persist($dbCourse);
                         $em->flush();
 
